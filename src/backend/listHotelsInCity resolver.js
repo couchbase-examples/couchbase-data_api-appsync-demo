@@ -9,7 +9,7 @@ export function request(ctx) {
     const password = ctx.arguments.auth.cb_password
     const token = util.base64Encode(`${username}:${password}`)
     const auth = `Basic ${token}`
-    const sql_query = `SELECT c.* FROM ${collection} AS c WHERE city = $city`;
+    const sql_query = `SELECT c.* FROM ${collection} AS c WHERE city = $1`;
 
     // Log to CloudWatch for debugging (best practice)
     console.log("Request Context:", ctx)
@@ -26,7 +26,7 @@ export function request(ctx) {
             body: {
                 query_context: `default:${bucket}.${scope}`,
                 statement: sql_query,
-                args: { city: ctx.arguments.city },
+                args: [ctx.arguments.city],
                 timeout: "30m"
             }
         }
