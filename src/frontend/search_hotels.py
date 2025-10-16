@@ -119,8 +119,8 @@ def get_map_style() -> str:
         # If user provides a Mapbox token, use Mapbox light style
         try:
             pdk.settings.mapbox_api_key = token
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as e:
+            st.warning(f"Failed to apply Mapbox token: {e}")
         return "mapbox://styles/mapbox/light-v10"
     # Tokenless Carto basemap
     return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
