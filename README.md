@@ -2,6 +2,25 @@
 
 This demo searches hotels by city using an AWS AppSync GraphQL API backed by Couchbase Data API, with a Streamlit frontend for visualization.
 
+### Screenshots
+
+- AWS AppSync
+  - Schema / Types
+    ![AppSync schema](assets/appsync-schema.jpg)
+  
+  - Data source
+    ![AppSync Data Source](assets/appsync-data-source.jpg)
+
+  - Resolver  
+    ![AppSync Resolver](assets/appsync-resolver.jpg)
+
+- Streamlit frontend
+  - Home Page
+    ![Streamlit home](assets/streamlit-search.jpg)
+  
+  - Map visualization  
+    ![Streamlit map](assets/streamlit-map.jpg)
+
 ### What’s here
 - `src/backend/`
   - `schema.graphql`: Defines `listHotelsInCity(auth: CouchbaseAuth!, city: String!)` and types.
