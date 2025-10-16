@@ -1,0 +1,20 @@
+query ListHotelsInCity {
+  listHotelsInCity(
+    auth: {
+      cb_username: "Administrator",
+      cb_password: "password"
+    },
+    city: "London"
+  ) {
+    id
+    name
+    address
+    city
+    country
+    phone
+    price
+    url
+    geo { lat lon }
+    reviews { ratings { Overall } }
+  }
+}

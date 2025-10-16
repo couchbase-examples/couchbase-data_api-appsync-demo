@@ -1,0 +1,64 @@
+input CouchbaseAuth {
+	cb_username: String
+	cb_password: String
+}
+
+type Hotel {
+	address: String
+	alias: String
+	checkin: String
+	checkout: String
+	city: String
+	country: String
+	description: String
+	directions: String
+	email: String
+	fax: String
+	free_breakfast: Boolean
+	free_internet: Boolean
+	free_parking: Boolean
+	geo: HotelGeoObject
+	id: Float
+	name: String
+	pets_ok: Boolean
+	phone: String
+	price: String
+	public_likes: [String]
+	reviews: [HotelReviewObject]
+	state: String
+	title: String
+	tollfree: String
+	type: String
+	url: String
+	vacancy: Boolean
+}
+
+type HotelGeoObject {
+	accuracy: String
+	lat: Float
+	lon: Float
+}
+
+type HotelRatingObject {
+	Cleanliness: Float
+	Location: Float
+	Overall: Float
+	Rooms: Float
+	Service: Float
+	Value: Float
+}
+
+type HotelReviewObject {
+	author: String
+	content: String
+	date: String
+	ratings: HotelRatingObject
+}
+
+type Query {
+	listHotelsInCity(auth: CouchbaseAuth!, city: String!): [Hotel]
+}
+
+schema {
+	query: Query
+}
