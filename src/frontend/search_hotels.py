@@ -50,7 +50,7 @@ def build_query() -> str:
     )
 
 
-def build_variables(settings: Dict[str, str], airport_name: str, within_km: int) -> Dict[str, Any]:
+def build_variables(airport_name: str, within_km: int) -> Dict[str, Any]:
     return {
         "airportName": airport_name,
         "withinKm": within_km,
@@ -72,14 +72,14 @@ def fetch_hotels(endpoint: str, api_key: str, query: str, variables: Dict[str, A
 
 def compute_rating_from_reviews(hotel: Dict[str, Any]) -> float:
     reviews = hotel.get("reviews") or []
-    overall_values: List[float] = []
-    for review in reviews:
-        ratings = (review or {}).get("ratings") or {}
-        overall = ratings.get("Overall")
-        if isinstance(overall, (int, float)):
-            overall_values.append(float(overall))
-    avg_overall = sum(overall_values) / len(overall_values) if overall_values else None
-    return (avg_overall * 2.0) if avg_overall is not None else 0.0
+    overall_values = [
+        float(review.get("ratings", {}).get("Overall"))
+        for review in reviews
+        if review and review.get("ratings", {}).get("Overall") is not None
+    ]
+    if not overall_values:
+        return 0.0
+    return (sum(overall_values) / len(overall_values)) * 2.0
 
 
 def color_from_rating(rating_out_of_10: float) -> List[int]:
@@ -91,16 +91,13 @@ def color_from_rating(rating_out_of_10: float) -> List[int]:
 
 
 def hotels_to_points(hotels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    points: List[Dict[str, Any]] = []
+    points = []
     for hotel in hotels:
         geo = hotel.get("geo") or {}
-        lat = geo.get("lat")
-        lon = geo.get("lon")
-        if lat is None or lon is None:
+        if not geo.get("lat") or not geo.get("lon"):
             continue
+        
         rating = compute_rating_from_reviews(hotel)
-        color = color_from_rating(rating)
-        # Format tooltip content with hotel details
         details = (
             f"<br/><div style='margin-top: 5px;'>"
             f"<b>Rating:</b> {rating:.1f}/10<br/>"
@@ -112,98 +109,77 @@ def hotels_to_points(hotels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             f"<b>Website:</b> {hotel.get('url', '')}"
             f"</div>"
         )
-        points.append(
-            {
-                "name": hotel.get("name", ""),
-                "details": details,
-                "lat": float(lat),
-                "lon": float(lon),
-                "color": color,
-            }
-        )
+        
+        points.append({
+            "name": hotel.get("name", ""),
+            "details": details,
+            "lat": float(geo["lat"]),
+            "lon": float(geo["lon"]),
+            "color": color_from_rating(rating),
+        })
     return points
 
 
 def get_map_style() -> str:
-    token = st.session_state.get("mapbox_token", "")
-    if token:
-        # If user provides a Mapbox token, use Mapbox light style
-        try:
-            pdk.settings.mapbox_api_key = token
-        except Exception as e:
-            st.warning(f"Failed to apply Mapbox token: {e}")
-        return "mapbox://styles/mapbox/light-v10"
-    # Tokenless Carto basemap
     return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
 
 
 def build_map(df_hotels: pd.DataFrame, airport: Dict[str, Any]) -> pdk.Deck:
-    layers = []
+    layers = [
+        pdk.Layer(
+            "ScatterplotLayer",
+            data=df_hotels,
+            get_position="[lon, lat]",
+            get_fill_color="color",
+            get_radius=8,
+            radius_units="meters",
+            radius_min_pixels=4,
+            radius_max_pixels=20,
+            pickable=True,
+            auto_highlight=True,
+        )
+    ]
     
-    # Hotel markers layer with detailed tooltip
-    hotel_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=df_hotels,
-        get_position="[lon, lat]",
-        get_fill_color="color",
-        get_radius=8,
-        radius_units="meters",
-        radius_min_pixels=4,
-        radius_max_pixels=20,
-        pickable=True,
-        auto_highlight=True,
-    )
-    layers.append(hotel_layer)
-    
-    # Airport marker layer (if airport is available)
+    # Add airport marker if available
     if airport and airport.get("location"):
-        airport_location = airport["location"]
         df_airport = pd.DataFrame([{
             "name": airport.get("name", "Airport"),
-            "lat": airport_location["lat"],
-            "lon": airport_location["lon"],
-            "color": [255, 165, 0, 255],  # Orange color for airport
-            "details": "",  # No details for airport
+            "lat": airport["location"]["lat"],
+            "lon": airport["location"]["lon"],
+            "color": [255, 165, 0, 255],
+            "details": "",
         }])
         
-        airport_layer = pdk.Layer(
+        layers.append(pdk.Layer(
             "ScatterplotLayer",
             data=df_airport,
             get_position="[lon, lat]",
             get_fill_color="color",
-            get_radius=15,  # Larger radius for airport
+            get_radius=15,
             radius_units="meters",
             radius_min_pixels=10,
             radius_max_pixels=40,
             pickable=True,
             auto_highlight=True,
-            get_line_color=[255, 255, 255, 255],  # White outline
+            get_line_color=[255, 255, 255, 255],
             line_width_min_pixels=2,
             stroked=True,
-        )
-        layers.append(airport_layer)
+        ))
     
-    # Calculate bounding box to show all markers (hotels + airport)
-    all_lats = list(df_hotels["lat"])
-    all_lons = list(df_hotels["lon"])
-    
+    # Center map on airport location or first hotel
     if airport and airport.get("location"):
-        airport_location = airport["location"]
-        all_lats.append(float(airport_location["lat"]))
-        all_lons.append(float(airport_location["lon"]))
-    
-    center_lat = sum(all_lats) / len(all_lats)
-    center_lon = sum(all_lons) / len(all_lons)
+        center_lat = airport["location"]["lat"]
+        center_lon = airport["location"]["lon"]
+    else:
+        center_lat = df_hotels["lat"].iloc[0]
+        center_lon = df_hotels["lon"].iloc[0]
     
     view_state = pdk.ViewState(
         longitude=center_lon,
         latitude=center_lat,
         zoom=1,
-        pitch=0,
-        bearing=0,
     )
     
-    # Tooltip shows name for all, details for hotels only
     tooltip = {
         "html": (
             "<div style='font-family: Arial, sans-serif;'>"
@@ -228,15 +204,14 @@ def render():
     
     col1, col2 = st.columns([2, 1])
     with col1:
-        airport_name = st.text_input("Airport Name", help="Enter the airport name to search near")
+        airport_name = st.text_input("Airport Name")
     with col2:
-        within_km = st.number_input("Distance (km)", min_value=1, max_value=500, value=50, help="Search radius in kilometers")
+        within_km = st.number_input("Distance (km)", min_value=1, max_value=500, value=50)
     
     st.caption("Markers are colored by rating (0–10) derived from reviews.")
 
     if st.button("Search"):
-        missing = validate_required(settings)
-        if missing:
+        if missing := validate_required(settings):
             st.error(f"Please fill the required connection settings: {', '.join(missing)}")
             return
         if not airport_name:
@@ -247,7 +222,7 @@ def render():
                 endpoint=settings["endpoint"],
                 api_key=settings["api_key"],
                 query=build_query(),
-                variables=build_variables(settings, airport_name, within_km),
+                variables=build_variables(airport_name, within_km),
             )
             hotels = result["hotels"]
             airport = result["airport"]
