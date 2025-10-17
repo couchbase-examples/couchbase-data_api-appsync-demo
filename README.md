@@ -5,6 +5,9 @@ This demo searches hotels by city using an AWS AppSync GraphQL API backed by Cou
 ### Screenshots
 
 - AWS AppSync
+  - Environment Variables
+    ![AppSync Env Vars Configuration](assets/appsync-env-vars.jpg)
+
   - Schema / Types
     ![AppSync schema](assets/appsync-schema.jpg)
   
