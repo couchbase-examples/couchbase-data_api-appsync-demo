@@ -195,27 +195,10 @@ def build_map(df_hotels: pd.DataFrame, airport: Dict[str, Any]) -> pdk.Deck:
     center_lat = sum(all_lats) / len(all_lats)
     center_lon = sum(all_lons) / len(all_lons)
     
-    # Calculate zoom level based on bounding box
-    lat_range = max(all_lats) - min(all_lats)
-    lon_range = max(all_lons) - min(all_lons)
-    max_range = max(lat_range, lon_range)
-    
-    # Estimate zoom level (rough approximation)
-    if max_range > 1.0:
-        zoom = 8
-    elif max_range > 0.5:
-        zoom = 9
-    elif max_range > 0.2:
-        zoom = 10
-    elif max_range > 0.1:
-        zoom = 11
-    else:
-        zoom = 12
-    
     view_state = pdk.ViewState(
         longitude=center_lon,
         latitude=center_lat,
-        zoom=zoom,
+        zoom=1,
         pitch=0,
         bearing=0,
     )
