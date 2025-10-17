@@ -1,8 +1,3 @@
-input CouchbaseAuth {
-	cb_username: String
-	cb_password: String
-}
-
 type Hotel {
 	address: String
 	alias: String
@@ -56,7 +51,7 @@ type HotelReviewObject {
 }
 
 type Query {
-	listHotelsInCity(auth: CouchbaseAuth!, city: String!): [Hotel]
+	listHotelsInCity(city: String!): [Hotel]
 }
 
 schema {

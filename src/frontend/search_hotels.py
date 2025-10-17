@@ -10,8 +10,6 @@ def get_connection_settings() -> Dict[str, str]:
     return {
         "endpoint": st.session_state.get("gql_endpoint", ""),
         "api_key": st.session_state.get("api_key", ""),
-        "username": st.session_state.get("username", ""),
-        "password": st.session_state.get("password", ""),
     }
 
 
@@ -19,16 +17,14 @@ def validate_required(settings: Dict[str, str]) -> List[str]:
     labels = {
         "endpoint": "GraphQL Endpoint",
         "api_key": "GraphQL API Key",
-        "username": "Couchbase Username",
-        "password": "Couchbase Password",
     }
     return [labels[k] for k, v in settings.items() if not v]
 
 
 def build_query() -> str:
     return (
-        "query ListHotelsInCity($auth: CouchbaseAuth!, $city: String!) {\n"
-        "  listHotelsInCity(auth: $auth, city: $city) {\n"
+        "query ListHotelsInCity($city: String!) {\n"
+        "  listHotelsInCity(city: $city) {\n"
         "    id\n"
         "    name\n"
         "    address\n"
@@ -46,10 +42,6 @@ def build_query() -> str:
 
 def build_variables(settings: Dict[str, str], city: str) -> Dict[str, Any]:
     return {
-        "auth": {
-            "cb_username": settings["username"],
-            "cb_password": settings["password"],
-        },
         "city": city,
     }
 

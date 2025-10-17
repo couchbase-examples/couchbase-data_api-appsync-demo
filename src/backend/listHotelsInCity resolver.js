@@ -5,8 +5,8 @@ export function request(ctx) {
     const bucket = "travel-sample"
     const scope = "inventory"
     const collection = "hotel"
-    const username = ctx.arguments.auth.cb_username
-    const password = ctx.arguments.auth.cb_password
+    const username = ctx.env.cb_username
+    const password = ctx.env.cb_password
     const token = util.base64Encode(`${username}:${password}`)
     const auth = `Basic ${token}`
     const sql_query = `SELECT c.* FROM ${collection} AS c WHERE city = $1`;

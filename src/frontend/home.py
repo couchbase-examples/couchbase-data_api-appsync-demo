@@ -40,16 +40,6 @@ def render():
         value=st.session_state.get("api_key", ""),
         type="password",
     )
-    st.session_state["username"] = st.sidebar.text_input(
-        "Couchbase Username",
-        value=st.session_state.get("username", ""),
-    )
-    st.session_state["password"] = st.sidebar.text_input(
-        "Couchbase Password",
-        value=st.session_state.get("password", ""),
-        type="password",
-    )
-    # Bucket/Scope/Collection are not required by the provided schema
 
     module_name = PAGES[page_name]
     if module_name == "home":
@@ -59,14 +49,10 @@ def render():
     required_keys = [
         "gql_endpoint",
         "api_key",
-        "username",
-        "password",
     ]
     labels = {
         "gql_endpoint": "GraphQL Endpoint",
         "api_key": "GraphQL API Key",
-        "username": "Couchbase Username",
-        "password": "Couchbase Password",
     }
     missing = [labels[k] for k in required_keys if not st.session_state.get(k)]
     if missing:

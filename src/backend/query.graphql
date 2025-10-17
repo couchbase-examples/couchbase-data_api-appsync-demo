@@ -1,9 +1,5 @@
 query ListHotelsInCity {
   listHotelsInCity(
-    auth: {
-      cb_username: "Administrator",
-      cb_password: "password"
-    },
     city: "London"
   ) {
     id
