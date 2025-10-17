@@ -1,3 +1,14 @@
+type Airport {
+	location: GeoObject
+	name: String
+}
+
+type GeoObject {
+	accuracy: String
+	lat: Float
+	lon: Float
+}
+
 type Hotel {
 	address: String
 	alias: String
@@ -12,7 +23,7 @@ type Hotel {
 	free_breakfast: Boolean
 	free_internet: Boolean
 	free_parking: Boolean
-	geo: HotelGeoObject
+	geo: GeoObject
 	id: Float
 	name: String
 	pets_ok: Boolean
@@ -26,12 +37,6 @@ type Hotel {
 	type: String
 	url: String
 	vacancy: Boolean
-}
-
-type HotelGeoObject {
-	accuracy: String
-	lat: Float
-	lon: Float
 }
 
 type HotelRatingObject {
@@ -50,8 +55,13 @@ type HotelReviewObject {
 	ratings: HotelRatingObject
 }
 
+type Output {
+	hotels: [Hotel]
+	airport: Airport
+}
+
 type Query {
-	listHotelsInCity(city: String!): [Hotel]
+	listHotelsNearAirport(airportName: String!, withinKm: Int!): Output
 }
 
 schema {

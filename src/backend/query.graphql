@@ -1,16 +1,27 @@
-query ListHotelsInCity {
-  listHotelsInCity(
-    city: "London"
+query ListHotelsNearAirport {
+  listHotelsNearAirport(
+    airportName: "Les Loges",
+    withinKm: 100
   ) {
-    id
-    name
-    address
-    city
-    country
-    phone
-    price
-    url
-    geo { lat lon }
-    reviews { ratings { Overall } }
+    hotels {
+      id
+      name
+      address
+      city
+      country
+      phone
+      price
+      url
+      geo { lat lon }
+      reviews { ratings { Overall } }
+    }
+    airport {
+      name
+      location {
+        lat
+        lon
+        accuracy
+      }
+    }
   }
 }

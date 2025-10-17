@@ -12,16 +12,17 @@ def render_home():
     st.title("Home")
     st.subheader("About this demo")
     st.markdown(
-        "This Streamlit app calls an AWS AppSync GraphQL API that uses Couchbase Data API behind the scenes to search hotels by city and visualize results on a map."
+        "This Streamlit app calls an AWS AppSync GraphQL API that uses Couchbase Data API behind the scenes to search hotels near airports and visualize results on a map."
     )
     st.markdown(
         "**Why dataAPI for serverless?** It keeps credentials and query logic secure on the server behind AppSync, avoids heavy SDK initialization overhead, and perfectly fits stateless, scalable Lambda functions."
     )
     st.subheader("What this demo showcases and how to proceed")
     st.markdown(
-        "- Enter your AppSync GraphQL endpoint and API key in the sidebar (plus Couchbase creds).\n"
-        "- Go to 'Search Hotels' to run a city filter; resolvers invoke dataAPI to query Couchbase.\n"
-        "- View results in a list and on a map; try different cities.\n"
+        "- Enter your AppSync GraphQL endpoint and API key in the sidebar.\n"
+        "- Go to 'Search Hotels' to find hotels near an airport within a specified distance; resolvers invoke dataAPI to query Couchbase.\n"
+        "- The query uses geospatial calculations to find hotels based on lat/lon coordinates.\n"
+        "- View results on a map with color-coded ratings; try different airports and distances.\n"
         "- Extend this starter by adding mutations or subscriptions in your AppSync schema."
     )
 
