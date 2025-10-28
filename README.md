@@ -63,6 +63,8 @@ Before you get started, make sure you have:
 
 ## Quick Start
 
+> **For a detailed step-by-step tutorial, see:** [Build a Hotel Search App with AppSync, Data API, and Streamlit](https://developer.couchbase.com/tutorial-appsync-data-api-streamlit-travel-sample)
+
 ### 1. Set Up AWS AppSync
 
 **a) Create AppSync API:**
