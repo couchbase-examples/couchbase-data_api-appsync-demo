@@ -1,21 +1,25 @@
-## Travel Sample: AppSync + Couchbase Data API
+# Travel Sample: AppSync + Couchbase Data API
 
-This demo searches hotels near airports using an AWS AppSync GraphQL API backed by Couchbase Data API, with a Streamlit frontend for visualization. The query uses geospatial calculations to find hotels within a specified distance from an airport. Results include both hotel listings and the airport information (name and location) in a structured GraphQL response.
+## Motivation
 
-### Screenshots
+This demo showcases how to use **Couchbase Capella Data API** in a serverless architecture. The app connects AWS AppSync with Couchbase Capella using the Data API—ideal for serverless environments because it:
 
-- AWS AppSync
-  - Environment Variables
-    ![AppSync Env Vars Configuration](assets/appsync-env-vars.jpg)
+- **Enables driverless mode:** No need to deploy SDKs in FaaS environments (AWS Lambda, Azure Functions)
+- **Is lightweight:** Avoids heavy SDK initialization overhead in stateless functions
+- **Simplifies integration:** Uses standard HTTP—no SDK version management or dependencies
+- **Is language agnostic:** Works with any platform that can make HTTP requests
 
-  - Schema / Types
-    ![AppSync schema](assets/appsync-schema.jpg)
-  
-  - Data source
-    ![AppSync Data Source](assets/appsync-data-source.jpg)
+Learn more: [Data API vs. SDKs](https://docs.couchbase.com/cloud/data-api-guide/data-api-sdks.html)
 
-  - Resolver  
-    ![AppSync Resolver](assets/appsync-resolver.jpg)
+**Architecture Overview:**
+- **Frontend:** Streamlit (Python) for interactive UI
+- **API Layer:** AWS AppSync (GraphQL) as the API source
+- **Backend:** Couchbase Capella connected via Data API
+- **Use Case:** Search hotels near airports using geospatial queries
+
+The query uses geospatial calculations to find hotels within a specified distance from an airport and visualizes results on an interactive map.
+
+## Screenshots
 
 - Streamlit frontend
   - Home Page
@@ -24,7 +28,7 @@ This demo searches hotels near airports using an AWS AppSync GraphQL API backed 
   - Map visualization  
     ![Streamlit map](assets/streamlit-map.jpg)
 
-### What's here
+## What's here
 - `src/backend/`
   - `schema.graphql`: Defines the GraphQL schema with:
     - Query: `listHotelsNearAirport(airportName: String!, withinKm: Int!)`
@@ -39,7 +43,7 @@ This demo searches hotels near airports using an AWS AppSync GraphQL API backed 
     - Credentials read from AppSync environment variables (`cb_username`, `cb_password`)
   - `query.graphql`: Example GraphQL query for testing in the AppSync console
 - `src/frontend/`
-  - `home.py`: Streamlit main entry point with navigation sidebar and connection settings (GraphQL endpoint, API key)
+  - `home.py`: Streamlit main entry point with tab-based navigation and connection settings (GraphQL endpoint, API key)
   - `search_hotels.py`: Interactive search interface
     - Calls AppSync GraphQL API with airport name and distance parameters
     - Displays results on an interactive map using Pydeck
@@ -48,30 +52,95 @@ This demo searches hotels near airports using an AWS AppSync GraphQL API backed 
     - Hover tooltips show hotel details (name, rating, address, price, etc.) or just airport name
     - Automatically centers and zooms map to show all markers
 
-### Why Data API for this (serverless)
-Keeps credentials and query logic securely on the server behind AppSync (as environment variables), avoids client-side secrets and heavy SDK initialization, and fits stateless, scalable Lambda resolvers.
+## Prerequisites
 
-### Quick start
-1) Backend (AppSync)
-   - Create an HTTP data source pointing to your Couchbase Data API base URL.
-   - Import `src/backend/schema.graphql` as your schema.
-   - Configure environment variables in AppSync settings:
-     - `cb_username`: Your Couchbase username
-     - `cb_password`: Your Couchbase password
-   - Attach `src/backend/listHotelsInCity resolver.js` as the JavaScript resolver for `Query.listHotelsNearAirport` using the Unit Resolver and Couchbase Data API as the data source.
-   - Use `src/backend/query.graphql` in the AppSync console to test (provide an airport name and distance in km).
+Before you get started, make sure you have:
 
-2) Frontend (Streamlit)
-   - Install deps and run:
-     ```bash
-     cd couchbase-data_api-appsync-demo
-     python3 -m pip install -r requirements.txt
-     streamlit run src/frontend/home.py
-     ```
-   - In the app sidebar, set: GraphQL endpoint and API key.
-   - Go to "Search Hotels", enter an airport name and distance, and click "Search".
+1. **[Couchbase Capella account](https://cloud.couchbase.com/sign-up)** with a [running cluster](https://docs.couchbase.com/cloud/get-started/create-account.html)
+2. **[Travel-sample bucket](https://docs.couchbase.com/cloud/clusters/data-service/import-data-documents.html)** imported into your cluster
+3. **[Data API enabled](https://docs.couchbase.com/cloud/data-api-guide/data-api-start.html)** in Capella (via the cluster's Connect page)
+4. **[AWS account](https://aws.amazon.com/)** with permissions to create AppSync APIs
 
-### Notes
+## Quick Start
+
+### 1. Set Up AWS AppSync
+
+**a) Create AppSync API:**
+- Go to AWS AppSync console
+- Create a new API (choose "Build from scratch" option)
+- Name your API (e.g., "HotelSearchAPI")
+
+**b) Create HTTP Data Source:**
+- Go to Data sources → Create data source
+- Data source type: **HTTP**
+- Name: `CouchbaseDataAPI`
+- HTTP endpoint URL: Your Couchbase Data API base URL
+- **Note:** Do NOT enable "Authorization" configuration—credentials will be passed via resolver
+
+![AppSync Data Source](assets/appsync-data-source.jpg)
+
+**c) Configure Environment Variables:**
+- Go to Settings → Environment variables
+- Add:
+  - `cb_username`: Your Couchbase Data API username
+  - `cb_password`: Your Couchbase Data API password
+
+![AppSync Env Vars Configuration](assets/appsync-env-vars.jpg)
+
+**d) Import Schema:**
+- Go to Schema
+- Copy contents from `src/backend/schema.graphql` and paste into the schema editor
+- Save schema
+
+![AppSync schema](assets/appsync-schema.jpg)
+
+**e) Create Resolver:**
+- Go to Schema → Query type → `listHotelsNearAirport` field
+- Click "Attach Resolver"
+- Data source: Select `CouchbaseDataAPI`
+- Runtime: **JavaScript**
+- Copy contents from `src/backend/listHotelsInCity resolver.js` and paste into resolver code editor
+- Save resolver
+
+![AppSync Resolver](assets/appsync-resolver.jpg)
+
+**f) Test Your Query:**
+- Go to Queries
+- Copy the query from `src/backend/query.graphql`
+- Provide variables: `{"airportName": "London Heathrow", "withinKm": 50}`
+- Run query to verify setup
+
+**g) Get API Credentials:**
+- Go to Settings to find your **GraphQL endpoint URL**
+- Go to API Keys → Create API key and note the **API Key** (starts with `da2-`)
+
+### 2. Set Up Frontend (Streamlit)
+
+Install dependencies and run:
+```bash
+# Navigate to the project directory
+cd couchbase-data_api-appsync-demo
+
+# Create a virtual environment
+python3 -m venv .venv
+
+# Activate the virtual environment
+source ./.venv/bin/activate
+
+# Install required dependencies
+pip install -r requirements.txt
+
+# Run the Streamlit app
+streamlit run src/frontend/home.py
+```
+
+In the app:
+- Enter **AppSync GraphQL Endpoint** and **API Key** in the sidebar (from AppSync Settings)
+- Click the **"Search Hotels"** tab
+- Try example airports: `San Francisco Intl`, `Les Loges`, `Luton`, `London St Pancras`
+- Enter distance in km and click **Search**
+
+## Notes
 
 **Backend (Resolver)**
 - Assumes collections `travel-sample.inventory.hotel` and `travel-sample.inventory.airport` exist

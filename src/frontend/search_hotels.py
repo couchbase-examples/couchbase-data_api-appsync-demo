@@ -15,8 +15,8 @@ def get_connection_settings() -> Dict[str, str]:
 
 def validate_required(settings: Dict[str, str]) -> List[str]:
     labels = {
-        "endpoint": "GraphQL Endpoint",
-        "api_key": "GraphQL API Key",
+        "endpoint": "AppSync GraphQL Endpoint",
+        "api_key": "AppSync API Key",
     }
     return [labels[k] for k, v in settings.items() if not v]
 
@@ -204,11 +204,15 @@ def render():
     
     col1, col2 = st.columns([2, 1])
     with col1:
-        airport_name = st.text_input("Airport Name")
+        airport_name = st.text_input(
+            "Airport Name",
+            placeholder="e.g., San Francisco Intl, Les Loges, Luton, London St Pancras",
+        )
     with col2:
         within_km = st.number_input("Distance (km)", min_value=1, max_value=500, value=50)
     
     st.caption("Markers are colored by rating (0–10) derived from reviews.")
+    st.caption("**Example airports:** San Francisco Intl, Les Loges, Luton, London St Pancras")
 
     if st.button("Search"):
         if missing := validate_required(settings):
@@ -217,18 +221,20 @@ def render():
         if not airport_name:
             st.error("Please enter an airport name")
             return
-        try:
-            result = fetch_hotels(
-                endpoint=settings["endpoint"],
-                api_key=settings["api_key"],
-                query=build_query(),
-                variables=build_variables(airport_name, within_km),
-            )
-            hotels = result["hotels"]
-            airport = result["airport"]
-        except Exception as exc:  # noqa: BLE001
-            st.error(f"GraphQL error: {exc}")
-            return
+        
+        with st.spinner("Fetching hotels..."):
+            try:
+                result = fetch_hotels(
+                    endpoint=settings["endpoint"],
+                    api_key=settings["api_key"],
+                    query=build_query(),
+                    variables=build_variables(airport_name, within_km),
+                )
+                hotels = result["hotels"]
+                airport = result["airport"]
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"GraphQL error: {exc}")
+                return
         
         if not airport:
             st.error(f"Airport '{airport_name}' not found.")
