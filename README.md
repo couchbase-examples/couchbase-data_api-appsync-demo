@@ -59,6 +59,9 @@ Before you get started, make sure you have:
 1. **[Couchbase Capella account](https://cloud.couchbase.com/sign-up)** with a [running cluster](https://docs.couchbase.com/cloud/get-started/create-account.html)
 2. **[Travel-sample bucket](https://docs.couchbase.com/cloud/clusters/data-service/import-data-documents.html)** imported into your cluster
 3. **[Data API enabled](https://docs.couchbase.com/cloud/data-api-guide/data-api-start.html)** in Capella (via the cluster's Connect page)
+   - **Important:** Set Allowed IP address to **"Allow access from anywhere"** for demo purposes
+   - This configuration is required for this demo to function with AWS AppSync
+   - Not recommended for production—see [documentation](https://docs.couchbase.com/cloud/data-api-guide/data-api-start.html) for secure network configurations
 4. **[AWS account](https://aws.amazon.com/)** with permissions to create AppSync APIs
 
 ## Quick Start
@@ -68,12 +71,12 @@ Before you get started, make sure you have:
 ### 1. Set Up AWS AppSync
 
 **a) Create AppSync API:**
-- Go to AWS AppSync console
+- Navigate to AWS AppSync console
 - Create a new API (choose "Build from scratch" option)
 - Name your API (e.g., "HotelSearchAPI")
 
 **b) Create HTTP Data Source:**
-- Go to Data sources → Create data source
+- Navigate to Data sources → Create data source
 - Data source type: **HTTP**
 - Name: `CouchbaseDataAPI`
 - HTTP endpoint URL: Your Couchbase Data API base URL
@@ -82,7 +85,7 @@ Before you get started, make sure you have:
 ![AppSync Data Source](assets/appsync-data-source.jpg)
 
 **c) Configure Environment Variables:**
-- Go to Settings → Environment variables
+- Navigate to Settings → Environment variables
 - Add:
   - `cb_username`: Your Couchbase Data API username
   - `cb_password`: Your Couchbase Data API password
@@ -90,14 +93,14 @@ Before you get started, make sure you have:
 ![AppSync Env Vars Configuration](assets/appsync-env-vars.jpg)
 
 **d) Import Schema:**
-- Go to Schema
+- Navigate to Schema
 - Copy contents from `src/backend/schema.graphql` and paste into the schema editor
 - Save schema
 
 ![AppSync schema](assets/appsync-schema.jpg)
 
 **e) Create Resolver:**
-- Go to Schema → Query type → `listHotelsNearAirport` field
+- Navigate to Schema → Query type → `listHotelsNearAirport` field
 - Click "Attach Resolver"
 - Data source: Select `CouchbaseDataAPI`
 - Runtime: **JavaScript**
@@ -107,14 +110,14 @@ Before you get started, make sure you have:
 ![AppSync Resolver](assets/appsync-resolver.jpg)
 
 **f) Test Your Query:**
-- Go to Queries
+- Navigate to Queries
 - Copy the query from `src/backend/query.graphql`
 - Provide variables: `{"airportName": "London Heathrow", "withinKm": 50}`
 - Run query to verify setup
 
 **g) Get API Credentials:**
-- Go to Settings to find your **GraphQL endpoint URL**
-- Go to API Keys → Create API key and note the **API Key** (starts with `da2-`)
+- Navigate to Settings to find your **GraphQL endpoint URL**
+- Navigate to API Keys → Create API key and note the **API Key** (starts with `da2-`)
 
 ### 2. Set Up Frontend (Streamlit)
 
