@@ -21,52 +21,82 @@ def validate_required(settings: Dict[str, str]) -> List[str]:
     return [labels[k] for k, v in settings.items() if not v]
 
 
-def build_query() -> str:
-    return (
-        "query ListHotelsNearAirport($airportName: String!, $withinKm: Int!) {\n"
-        "  listHotelsNearAirport(airportName: $airportName, withinKm: $withinKm) {\n"
-        "    hotels {\n"
-        "      id\n"
-        "      name\n"
-        "      address\n"
-        "      city\n"
-        "      country\n"
-        "      phone\n"
-        "      price\n"
-        "      url\n"
-        "      geo { lat lon }\n"
-        "      reviews { ratings { Overall } }\n"
-        "    }\n"
-        "    airport {\n"
-        "      name\n"
-        "      location {\n"
-        "        lat\n"
-        "        lon\n"
-        "        accuracy\n"
-        "      }\n"
-        "    }\n"
-        "  }\n"
-        "}"
-    )
-
-
-def build_variables(airport_name: str, within_km: int) -> Dict[str, Any]:
-    return {
-        "airportName": airport_name,
-        "withinKm": within_km,
+HOTELS_NEAR_AIRPORT_QUERY = """
+query ListHotelsNearAirport($airportName: String!, $withinKm: Int!) {
+  listHotelsNearAirport(airportName: $airportName, withinKm: $withinKm) {
+    hotels {
+      id
+      name
+      address
+      city
+      country
+      phone
+      price
+      url
+      geo { lat lon }
+      reviews { ratings { Overall } }
     }
+    airport {
+      name
+      location {
+        lat
+        lon
+        accuracy
+      }
+    }
+  }
+}
+"""
+
+REQUEST_TIMEOUT_SECONDS = 30
 
 
-def fetch_hotels(endpoint: str, api_key: str, query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
+class AppSyncError(RuntimeError):
+    """Raised when the AppSync GraphQL API call cannot produce a result."""
+
+
+def fetch_hotels(endpoint: str, api_key: str, airport_name: str, within_km: int) -> Dict[str, Any]:
+    """Query AppSync for hotels near an airport.
+
+    Returns {"hotels": [...], "airport": {...} or None}. Every failure mode
+    (network error, timeout, non-JSON body, HTTP error, GraphQL errors) is
+    raised as AppSyncError with a message suitable for showing to the user.
+    """
     headers = {"x-api-key": api_key} if api_key else {}
-    resp = requests.post(endpoint, json={"query": query, "variables": variables}, headers=headers)
-    payload = resp.json()
-    if payload.get("errors"):
-        raise RuntimeError(str(payload["errors"]))
-    result = payload.get("data", {}).get("listHotelsNearAirport", {})
+    body = {
+        "query": HOTELS_NEAR_AIRPORT_QUERY,
+        "variables": {"airportName": airport_name, "withinKm": within_km},
+    }
+    try:
+        resp = requests.post(endpoint, json=body, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
+    except requests.RequestException as exc:
+        raise AppSyncError(f"Could not reach the AppSync endpoint: {exc}") from exc
+
+    try:
+        payload = resp.json()
+    except ValueError as exc:
+        raise AppSyncError(
+            f"AppSync returned a non-JSON response (HTTP {resp.status_code}). "
+            "Check the GraphQL endpoint URL."
+        ) from exc
+
+    if not isinstance(payload, dict):
+        raise AppSyncError(f"Unexpected AppSync response (HTTP {resp.status_code}).")
+
+    errors = payload.get("errors")
+    if errors:
+        messages = [
+            str(err.get("message", err)) if isinstance(err, dict) else str(err)
+            for err in errors
+        ]
+        raise AppSyncError("; ".join(messages))
+    if not resp.ok:
+        raise AppSyncError(f"AppSync request failed with HTTP {resp.status_code}.")
+
+    result = (payload.get("data") or {}).get("listHotelsNearAirport") or {}
     return {
-        "hotels": result.get("hotels", []),
-        "airport": result.get("airport")
+        "hotels": result.get("hotels") or [],
+        "airport": result.get("airport"),
     }
 
 
@@ -227,12 +257,12 @@ def render():
                 result = fetch_hotels(
                     endpoint=settings["endpoint"],
                     api_key=settings["api_key"],
-                    query=build_query(),
-                    variables=build_variables(airport_name, within_km),
+                    airport_name=airport_name,
+                    within_km=int(within_km),
                 )
                 hotels = result["hotels"]
                 airport = result["airport"]
-            except Exception as exc:  # noqa: BLE001
+            except AppSyncError as exc:
                 st.error(f"GraphQL error: {exc}")
                 return
         

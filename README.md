@@ -156,6 +156,8 @@ In the app:
 - Cleans hotel objects by removing airport coordinate fields (alat, alon, accuracy)
 
 **Frontend (Streamlit)**
+- `fetch_hotels()` in `search_hotels.py` is the single seam to AppSync: it owns the GraphQL query, a request timeout, and turns network, HTTP, non-JSON and GraphQL failures into one `AppSyncError` with a readable message
+- Offline tests for that seam (no AWS or Couchbase needed): `python -m unittest discover -s tests`
 - Extracts airport name and location from the `airport` object in GraphQL response
 - Computes hotel ratings by averaging `Overall` scores from reviews array, scaled to 0-10
 - Colors hotel markers from red (low rating) to green (high rating)
